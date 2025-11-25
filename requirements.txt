@@ -1,6 +1,33 @@
 
-google-genai
-python-dotenv
+asyncio==4.0.0
+websockets==15.0.1
+pytz==2025.2
+fastapi==0.121.2
+uvicorn==0.38.0
+twilio==9.8.6
+google-auth-oauthlib==1.2.3
+langchain-google-vertexai==3.0.3
+langchain==1.0.7
+langchain-core==1.0.5
+langgraph
+langchain-community
+google-cloud-aiplatform==1.127.0
+google-cloud-speech==2.34.0
+google-cloud-texttospeech==2.33.0
+google-cloud-secret-manager==2.25.0
+requests==2.32.5
+deepgram-sdk==5.3.0
+elevenlabs==2.23.0
+python-dotenv==1.2.1
+google-api-python-client==2.187.0
+numpy==2.3.4
+sounddevice==0.5.3
+webrtcvad==2.0.10
+google-cloud-storage==3.5.0
+python-multipart
+google-genai==1.50.1
+pyaudio
+
 websockets
 
 fastapi 
@@ -11,3 +38,4 @@ twilio
 google-auth-oauthlib 
 google-cloud-secret-manager 
 requests
+audioop
