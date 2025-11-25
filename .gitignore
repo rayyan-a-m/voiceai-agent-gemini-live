@@ -79,3 +79,4 @@ htmlcov/
 .cache/
 # Ignore lead files
 leads.csv
+voice_ai_receptionist.py

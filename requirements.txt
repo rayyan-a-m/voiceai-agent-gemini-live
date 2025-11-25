@@ -1,5 +1,4 @@
 
-pyaudio
 google-genai
 python-dotenv
 websockets
