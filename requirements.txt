@@ -1,0 +1,14 @@
+
+pyaudio
+google-genai
+python-dotenv
+websockets
+
+fastapi 
+uvicorn 
+python-dotenv 
+websockets 
+twilio 
+google-auth-oauthlib 
+google-cloud-secret-manager 
+requests
