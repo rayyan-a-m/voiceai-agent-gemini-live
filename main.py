@@ -6,6 +6,7 @@ import logging
 import os
 import uuid
 import audioop
+import re
 from typing import Any, Dict, Optional
 
 import websockets
@@ -49,14 +50,22 @@ active_sessions: Dict[str, "CallSession"] = {}
 def gemini_ws_uri(api_key: str) -> str:
     return f"wss://{GEMINI_WS_HOST}/{GEMINI_WS_PATH}?key={api_key}"
 
+def parse_rate_from_mime(mime: str, fallback: int) -> int:
+    """Extract sample rate from mime_type like 'audio/pcm;rate=24000'."""
+    m = re.search(r"rate=(\d+)", mime or "")
+    return int(m.group(1)) if m else fallback
+
+
 # -------------------------
 # CallSession: manages Gemini websocket and audio queues
 # -------------------------
 class CallSession:
     """
-    Manages a bidirectional stream between Twilio WebSocket and Gemini Live WebSocket
-    - inbound queue: audio from Twilio to send to Gemini (linear PCM @ GEMINI_AUDIO_RATE)
-    - receives Gemini audio and forwards transformed audio back to Twilio as mulaw@8k
+    Fixed CallSession:
+      - Correctly parses Gemini audio sample rate
+      - Resamples to Twilio-required 8000 Hz
+      - Maintains audioop.ratecv() state across chunks
+      - Converts PCM → μ-law correctly
     """
     def __init__(self, call_sid: str, stream_sid: str, twilio_send: callable):
         self.call_sid = call_sid
@@ -66,7 +75,12 @@ class CallSession:
         self._gemini_ws: Optional[websockets.WebSocketClientProtocol] = None
         self._tasks: list[asyncio.Task] = []
         self._closed = asyncio.Event()
-        self._media_chunk_counter = 0  # for Twilio outbound chunk
+
+        # NEW — needed for correct resampling
+        self._ratecv_state = None
+        self._recv_input_rate: Optional[int] = None
+
+        self._media_chunk_counter = 0
         logging.info("CallSession created for stream %s", stream_sid)
 
     async def start(self):
@@ -89,9 +103,7 @@ class CallSession:
                             "prebuilt_voice_config": {
                                 "voice_name": "Orus"
                             }
-                        },
-                        # Request Gemini to produce PCM at GEMINI_AUDIO_RATE
-                        # "audio_format": {"mime_type": f"audio/pcm;rate={GEMINI_AUDIO_RATE}"}
+                        }
                     }
                 }
             }
@@ -190,26 +202,30 @@ class CallSession:
                         logging.exception("Failed to decode Gemini audio b64: %s", e)
                         continue
 
-                    # If Gemini audio sample rate != 8000, we need to resample and convert
-                    # We requested GEMINI_AUDIO_RATE. Expect pcm16 linear16 samples.
-                    # Convert to mu-law 8k for Twilio:
-                    try:
-                        # Ensure pcm bytes are 16-bit little-endian signed integers
-                        sample_width = 2  # bytes per sample
-                        # If GEMINI_AUDIO_RATE != 8000, resample to 8000
-                        if GEMINI_AUDIO_RATE != 8000:
-                            # audioop.ratecv requires mono PCM, width in bytes
-                            # It returns (newfragment, state)
-                            new_frames, _ = audioop.ratecv(pcm_bytes, sample_width, 1, GEMINI_AUDIO_RATE, 4000, None)
-                            pcm_for_mulaw = new_frames
-                        else:
-                            pcm_for_mulaw = pcm_bytes
+                    # --- FIX: detect Gemini output sample rate ---
+                    in_rate = parse_rate_from_mime(mime, fallback=GEMINI_AUDIO_RATE)
+                    out_rate = 8000  # Twilio requirement
+                    width = 2        # PCM16
 
-                        # Convert linear16 PCM to mu-law (returns bytes of mu-law)
-                        mulaw_bytes = audioop.lin2ulaw(pcm_for_mulaw, 2)
+                    # reset ratecv state if rate changes
+                    if self._recv_input_rate != in_rate:
+                        self._ratecv_state = None
+                        self._recv_input_rate = in_rate
+
+                    try:
+                        if in_rate != out_rate:
+                            pcm_8k, self._ratecv_state = audioop.ratecv(
+                                pcm_bytes, width, 1, in_rate, out_rate, self._ratecv_state
+                            )
+                        else:
+                            pcm_8k = pcm_bytes
+
+                        mulaw_bytes = audioop.lin2ulaw(pcm_8k, width)
+
                     except Exception as e:
-                        logging.exception("Error converting Gemini PCM to mu-law: %s", e)
+                        logging.exception("Audio conversion failed: %s", e)
                         continue
+
 
                     # Send to Twilio websocket as a media message
                     self._media_chunk_counter += 1
