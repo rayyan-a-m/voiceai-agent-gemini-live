@@ -200,7 +200,7 @@ class CallSession:
                         if GEMINI_AUDIO_RATE != 8000:
                             # audioop.ratecv requires mono PCM, width in bytes
                             # It returns (newfragment, state)
-                            new_frames, _ = audioop.ratecv(pcm_bytes, sample_width, 1, GEMINI_AUDIO_RATE, 8000, None)
+                            new_frames, _ = audioop.ratecv(pcm_bytes, sample_width, 1, GEMINI_AUDIO_RATE, 16000, None)
                             pcm_for_mulaw = new_frames
                         else:
                             pcm_for_mulaw = pcm_bytes
