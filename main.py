@@ -84,15 +84,6 @@ class CallSession:
                 "model": f"models/{GEMINI_MODEL}",
                 "generation_config": {
                     "response_modalities": ["AUDIO"],
-                    "realtime_input_config": {
-                        "automatic_activity_detection": {
-                            "disabled": False, # default
-                            "start_of_speech_sensitivity": types.StartSensitivity.START_SENSITIVITY_LOW,
-                            "end_of_speech_sensitivity": types.EndSensitivity.END_SENSITIVITY_LOW,
-                            "prefix_padding_ms": 20,
-                            "silence_duration_ms": 100,
-                        }
-                    },
                     "speech_config": {
                         "voice_config": {
                             "prebuilt_voice_config": {
@@ -100,7 +91,7 @@ class CallSession:
                             }
                         },
                         # Request Gemini to produce PCM at GEMINI_AUDIO_RATE
-                        "audio_format": {"mime_type": f"audio/pcm;rate={GEMINI_AUDIO_RATE}"}
+                        # "audio_format": {"mime_type": f"audio/pcm;rate={GEMINI_AUDIO_RATE}"}
                     }
                 }
             }
