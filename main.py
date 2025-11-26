@@ -192,6 +192,7 @@ class CallSession:
                     if not inline:
                         continue
                     # inline contains {"mime_type":"audio/pcm;rate=16000","data":"<b64>"}
+                    logging.info("inline data - %s", inline)
                     mime = inline.get("mime_type", "")
                     b64 = inline.get("data")
                     if not b64:
@@ -203,7 +204,7 @@ class CallSession:
                         continue
 
                     # --- FIX: detect Gemini output sample rate ---
-                    in_rate = parse_rate_from_mime(mime, fallback=GEMINI_AUDIO_RATE)
+                    in_rate = parse_rate_from_mime(mime, fallback=24000)
                     out_rate = 8000  # Twilio requirement
                     width = 2        # PCM16
                     logging.info("Received Gemini audio: mime=%s in_rate=%d bytes=%d", mime, in_rate, len(pcm_bytes))
@@ -235,7 +236,7 @@ class CallSession:
                         "streamSid": self.stream_sid,
                         "media": {
                             # Twilio expects pure mu-law bytes base64 encoded
-                            "payload": base64.b64encode(mulaw_bytes).decode("ascii")
+                            "payload": base64.b64encode(mulaw_bytes).decode("utf8")
                         }
                     }
                     # Optionally include a mark so Twilio will notify when playback completes
