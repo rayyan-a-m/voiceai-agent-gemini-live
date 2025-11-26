@@ -206,6 +206,7 @@ class CallSession:
                     in_rate = parse_rate_from_mime(mime, fallback=GEMINI_AUDIO_RATE)
                     out_rate = 8000  # Twilio requirement
                     width = 2        # PCM16
+                    logging.info("Received Gemini audio: mime=%s in_rate=%d bytes=%d", mime, in_rate, len(pcm_bytes))
 
                     # reset ratecv state if rate changes
                     if self._recv_input_rate != in_rate:
