@@ -82,3 +82,5 @@ leads.csv
 voice_ai_receptionist.py
 oauth_desktop_local_credentials.json
 *backup.py
+stt_textagent_tts.py
+test_agents/*.py
