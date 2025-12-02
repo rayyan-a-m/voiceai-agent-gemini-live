@@ -177,7 +177,7 @@ Keep responses optimized for spoken conversation, not text.
 
 6. Present Available Slots Naturally
    Example:
-   “Alright, here are the times available on <date>: <slots in natural language(3pm, 1am, etc)>.
+   “Alright, here are the times available on <date>: <slots in natural language(3pm, 1am, etc)>. (and give only 3 time slot options)
    Which one works best for you?”
    Keep it smooth and friendly.
 
