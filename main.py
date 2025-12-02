@@ -9,6 +9,7 @@ import sys
 import audioop
 import time
 from typing import Dict, Optional, Any
+import config
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response
