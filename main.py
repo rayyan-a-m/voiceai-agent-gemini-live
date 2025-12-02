@@ -423,19 +423,15 @@ class CallSession:
         for fc in tool_call.function_calls:
             result = "Error: Unknown function"
             try:
-                args = fc.args
-                # Ensure args is a dict
-                if hasattr(args, 'items'):
-                    args_dict = {k: v for k, v in args.items()}
-                else:
-                    args_dict = args
-
                 if fc.name == "find_available_slots":
-                    result = find_available_slots.invoke(args_dict)
+                    logging.info(f"Finding available slots with args: {fc.args}")
+                    result = find_available_slots.invoke(fc.args)
                 elif fc.name == "book_appointment":
-                    result = book_appointment.invoke(args_dict)
+                    logging.info(f"Booking appointment with args: {fc.args}")
+                    result = book_appointment.invoke(fc.args)
                 elif fc.name == "get_property_details":
-                    result = get_property_details.invoke(args_dict)
+                    logging.info(f"Getting property details with args: {fc.args}")
+                    result = get_property_details.invoke(fc.args)
             except Exception as e:
                 logging.error(f"Tool execution failed: {e}")
                 result = f"Error: {e}"
