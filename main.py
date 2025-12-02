@@ -8,11 +8,13 @@ import threading
 import sys
 import audioop
 import time
+import io
+import csv
 from typing import Dict, Optional, Any
 import config
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from twilio.twiml.voice_response import Connect, VoiceResponse
@@ -26,14 +28,14 @@ from google.cloud import texttospeech
 # --- Import Tools (Assuming calender package exists as per source files) ---
 # If running locally without this package, these imports will fail. 
 # Ensure the directory structure matches the original environment.
-try:
-    from calender.google_calendar import find_available_slots, book_appointment, get_property_details
-except ImportError:
-    # Dummy mocks for standalone execution if files are missing
-    logging.warning("Calendar tools not found, using mocks.")
-    class MockTool:
-        def invoke(self, args): return "Success"
-    find_available_slots = book_appointment = get_property_details = MockTool()
+# try:
+from calender.google_calendar import find_available_slots, book_appointment, get_property_details
+# except ImportError:
+#     # Dummy mocks for standalone execution if files are missing
+#     logging.warning("Calendar tools not found, using mocks.")
+#     class MockTool:
+#         def invoke(self, args): return "Success"
+#     find_available_slots = book_appointment = get_property_details = MockTool()
 
 # Load environment variables
 load_dotenv()
@@ -736,18 +738,66 @@ async def oauth2callback(request: Request):
 
     return {"message": "Google Calendar connected successfully and token stored securely!"}
 
+# --- Outbound Campaign Management ---
+outbound_leads_queue = asyncio.Queue()
+campaign_in_progress = False
 
+async def campaign_worker():
+    global campaign_in_progress
+    campaign_in_progress = True
+    logging.info("Starting outbound campaign worker...")
+    while not outbound_leads_queue.empty():
+        lead = await outbound_leads_queue.get()
+        logging.info(f"Processing lead: {lead['first_name']} {lead['last_name']} at {lead['phone']}")
+        try:
+            # Note: Update wss URL to your deployed server's URL
+            # The query params (name, call_type) can be used by the websocket endpoint if updated to handle them.
+            websocket_url = f"wss://voiceai-agent-gemini-live.onrender.com/ws?name={lead['first_name']}&call_type=OUTBOUND"
+            twiml_response = VoiceResponse()
+            connect = Connect()
+            connect.stream(url=websocket_url)
+            twiml_response.append(connect)
+            logging.info(f"Initiating outbound call to {lead['phone']} with TwiML: {str(twiml_response)}")
+            
+            # Ensure 'to' and 'from_' are correctly formatted
+            call = twilio_client.calls.create(
+                to=lead['phone'], 
+                from_=TWILIO_PHONE_NUMBER, 
+                twiml=str(twiml_response)
+            )
+            logging.info(f"Outbound call initiated to {lead['phone']}, SID: {call.sid}")
+            await asyncio.sleep(15) # Wait before processing the next lead
+        except Exception as e:
+            logging.error(f"Failed to call lead {lead['first_name']}: {e}", exc_info=True)
+        outbound_leads_queue.task_done()
+    logging.info("Outbound campaign finished.")
+    campaign_in_progress = False
 
-
-
-
-
-
-
-
-
-
-
+@app.post("/start_outbound_campaign")
+async def start_outbound_campaign(file: UploadFile = File(...)):
+    global campaign_in_progress
+    if campaign_in_progress:
+        return {"status": "error", "message": "A campaign is already in progress."}
+    logging.info("Received request to start outbound campaign.")
+    try:
+        # Reading file content from csv
+        content = await file.read()
+        file_data = io.StringIO(content.decode("utf-8"))
+        reader = csv.DictReader(file_data)
+        leads_loaded = 0
+        for row in reader:
+            await outbound_leads_queue.put(row)
+            leads_loaded += 1
+        if leads_loaded > 0:
+            asyncio.create_task(campaign_worker())
+            message = f"Campaign started with {leads_loaded} leads."
+        else:
+            message = "No leads found in the uploaded file."
+        logging.info(message)
+        return {"status": "success", "message": message}
+    except Exception as e:
+        logging.error(f"Failed to process uploaded file: {e}", exc_info=True)
+        return {"status": "error", "message": "Failed to process file."}
 
 if __name__ == "__main__":
     import uvicorn
