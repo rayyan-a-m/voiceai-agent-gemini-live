@@ -44,7 +44,7 @@ def _load_credentials_from_secret_manager() -> Optional[Credentials]:
     
     try:
         logging.info(f"Attempting to load OAuth token from Secret Manager: '{OAUTH_TOKEN_SECRET_ID}'")
-        client = secretmanager.SecretManagerServiceClient()
+        client = secretmanager.SecretManagerServiceClient(credentials=config.GOOGLE_CREDENTIALS)
         secret_name = f"projects/{config.GCP_PROJECT_ID}/secrets/{OAUTH_TOKEN_SECRET_ID}/versions/latest"
         response = client.access_secret_version(request={"name": secret_name})
         token_data = json.loads(response.payload.data.decode("UTF-8"))
