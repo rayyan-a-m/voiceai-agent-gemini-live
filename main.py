@@ -149,11 +149,16 @@ Keep responses optimized for spoken conversation, not text.
    Inform user you will need a moment to look up properties in that location.
    Example:
    “Let me check the properties we have in that area… just a moment.” 
-   Use the user's location to find the property details.
-   If multiple properties are found, ask the user to clarify.
-   If no property is found, apologize and ask for another location.
-   Once a single property is identified, confirm it with the user (e.g., "Ah, the 3-bedroom in Bellandur?").
-   Store the 'id' of this property for later steps.
+   
+   CRITICAL: You MUST call the `get_property_details` tool now. 
+   Do NOT invent or guess property details. 
+   Do NOT proceed until you receive the tool output.
+   
+   After you receive the tool output:
+   - If multiple properties are found, ask the user to clarify.
+   - If no property is found, apologize and ask for another location.
+   - If a single property is found, confirm it with the user (e.g., "I found a 3-bedroom apartment in that area. Is that the one?").
+   - Store the 'id' of this property for later steps.
 
 4. Ask for the Date (Very natural)
    Say:
@@ -165,6 +170,10 @@ Keep responses optimized for spoken conversation, not text.
     Inform user you are checking available slots.
     Example:
     “Sure, give me a moment while I check the available slots…”
+    
+    CRITICAL: You MUST call the `find_available_slots` tool now.
+    Do NOT guess available times.
+    Do NOT proceed until you receive the tool output.
 
 6. Present Available Slots Naturally
    Example:
@@ -399,7 +408,6 @@ class CallSession:
                             # continue removed to allow processing of tool calls in the same message
 
                         # 3. Handle Tool Calls
-                        logging.warning(f"Received message -> has tool call? : {getattr(msg, "tool_call", None) is not None}")
                         if getattr(msg, "tool_call", None):
                             # Flush text before tool execution
                             if self.debounce_task and not self.debounce_task.done():
