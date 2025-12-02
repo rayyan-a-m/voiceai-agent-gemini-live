@@ -388,15 +388,15 @@ class CallSession:
                             if self.debounce_task and not self.debounce_task.done():
                                 self.debounce_task.cancel()
                             self.debounce_task = asyncio.create_task(self._schedule_debounce())
-                            continue
-                        
+                            # continue removed to allow processing of tool calls in the same message
+
                         # 2. Handle Completion Events (Flush Buffer)
                         event = getattr(msg, "event", None) or getattr(msg, "type", None)
                         if event in ("response.completed", "response_complete", "response.finished"):
                             if self.debounce_task and not self.debounce_task.done():
                                 self.debounce_task.cancel()
                             await self._flush_buffer_and_tts()
-                            continue
+                            # continue removed to allow processing of tool calls in the same message
 
                         # 3. Handle Tool Calls
                         if getattr(msg, "tool_call", None):
