@@ -18,3 +18,5 @@ webrtcvad==2.0.10
 google-cloud-storage==3.5.0
 python-multipart==0.0.20
 google-genai==1.50.1
+langchain-core
+langchain
