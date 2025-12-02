@@ -399,6 +399,7 @@ class CallSession:
                             # continue removed to allow processing of tool calls in the same message
 
                         # 3. Handle Tool Calls
+                        logging.warning(f"Received message -> has tool call? : {getattr(msg, "tool_call", None) is not None}")
                         if getattr(msg, "tool_call", None):
                             # Flush text before tool execution
                             if self.debounce_task and not self.debounce_task.done():
