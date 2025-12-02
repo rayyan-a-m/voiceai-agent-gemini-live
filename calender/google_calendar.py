@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # --- Google Calendar API Setup ---
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 # The ID of the secret in Google Secret Manager containing the OAuth token JSON.
-OAUTH_TOKEN_SECRET_ID = "oauth-token-rayyan-a-mahammed-gmail-comwfvef"#os.getenv("OAUTH_TOKEN_SECRET_ID")
+OAUTH_TOKEN_SECRET_ID = os.getenv("OAUTH_TOKEN_SECRET_ID")
 
 # --- Caching ---
 _calendar_service: Optional[Resource] = None
