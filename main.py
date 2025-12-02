@@ -55,8 +55,9 @@ TWILIO_RATE = 8000   # Twilio inbound rate
 
 # Initialize Clients
 try:
-    speech_client = speech.SpeechClient()
-    tts_client = texttospeech.TextToSpeechClient()
+    # Use credentials from config if available
+    speech_client = speech.SpeechClient(credentials=config.GOOGLE_CREDENTIALS)
+    tts_client = texttospeech.TextToSpeechClient(credentials=config.GOOGLE_CREDENTIALS)
     twilio_client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 except Exception as e:
     logging.error(f"Error initializing Cloud clients: {e}")
@@ -592,7 +593,7 @@ from fastapi.responses import RedirectResponse
 
 # --- Google Calendar OAuth 2.0 Endpoints ---
 
-secret_manager_client = secretmanager.SecretManagerServiceClient()
+secret_manager_client = secretmanager.SecretManagerServiceClient(credentials=config.GOOGLE_CREDENTIALS)
 
 # NOTE: In a production environment, the REDIRECT_URI must be a public URL
 # that you have registered in your Google Cloud Console for the OAuth client.

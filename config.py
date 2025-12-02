@@ -3,6 +3,7 @@ import json
 import logging
 from dotenv import load_dotenv
 from typing import List, Optional
+from google.oauth2 import service_account
 
 # Load environment variables from a .env file if it exists.
 # This is great for local development.
@@ -14,6 +15,37 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# --- Google Cloud Credentials ---
+# This is the central source of truth for all Google Cloud authentication.
+# In production (like Render), set GOOGLE_CREDENTIALS_JSON as a secret
+# environment variable with the content of your service account JSON file.
+# For local development, you can set GOOGLE_APPLICATION_CREDENTIALS to the *path* of the JSON file.
+GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
+GOOGLE_APPLICATION_CREDENTIALS_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+def get_google_credentials():
+    """Loads Google Cloud credentials from env vars or a file."""
+    creds = None
+    try:
+        if GOOGLE_CREDENTIALS_JSON:
+            credentials_info = json.loads(GOOGLE_CREDENTIALS_JSON)
+            creds = service_account.Credentials.from_service_account_info(credentials_info)
+            logging.info("Loaded Google Cloud credentials from GOOGLE_CREDENTIALS_JSON.")
+        elif GOOGLE_APPLICATION_CREDENTIALS_PATH and os.path.exists(GOOGLE_APPLICATION_CREDENTIALS_PATH):
+            creds = service_account.Credentials.from_service_account_file(GOOGLE_APPLICATION_CREDENTIALS_PATH)
+            logging.info(f"Loaded Google Cloud credentials from file: {GOOGLE_APPLICATION_CREDENTIALS_PATH}")
+        else:
+            # This is not an error, but a fallback to Application Default Credentials (ADC)
+            logging.warning("No explicit Google Cloud credentials provided (JSON or path). Falling back to ADC. This may not work in all environments.")
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse GOOGLE_CREDENTIALS_JSON: {e}")
+    except Exception as e:
+        logging.error(f"Failed to load Google Cloud credentials: {e}")
+    return creds
+
+# Centralized credentials object to be used across the application
+GOOGLE_CREDENTIALS = get_google_credentials()
 
 # --- Google Cloud & Gemini Configuration ---
 # Using os.getenv() is the standard way to access environment variables.
