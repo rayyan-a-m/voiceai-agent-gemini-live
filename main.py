@@ -650,13 +650,12 @@ async def oauth2callback(request: Request):
 
     # The full URL of the request is required to fetch the token.
     authorization_response = str(request.url)
-    
+    logging.info(f"Callback URL received: {authorization_response}")
+
     # For security, ensure the response is sent over HTTPS in production
     if "http://" in authorization_response and "localhost" not in authorization_response:
-        logging.warning("OAuth callback received over HTTP. In production, this should be HTTPS.")
-        # To enforce HTTPS, uncomment the following lines:
-        # from fastapi import HTTPException
-        # raise HTTPException(status_code=400, detail="OAuth callback must be over HTTPS")
+        logging.warning("OAuth callback received over HTTP. Converting to HTTPS for OAuth validation.")
+        authorization_response = authorization_response.replace("http://", "https://")
 
     flow = Flow.from_client_config(
         credentials_info,
