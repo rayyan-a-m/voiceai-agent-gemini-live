@@ -5,11 +5,6 @@ DEMO - https://www.linkedin.com/posts/mahammed-rayyan-233a581b1_started-as-a-cur
 
 This project is a sophisticated, real-time AI voice agent designed to act as an appointment setter for a real estate firm. It can handle both inbound and outbound calls, qualify leads, provide information on properties, and book site visits directly on a Google Calendar.
 
-## Recent Improvements 
-
-- Hardened LLM response parsing in `main.py` (`_to_text`) to gracefully handle varied Vertex AI / LangChain payload shapes (strings, dicts, objects, lists, candidate arrays) and avoid `AttributeError` crashes.
-- Suppressed noisy third‑party deprecation and syntax warnings for cleaner logs (see warning filters in `main.py` and `llm_test.py`).
-- Added defensive fallbacks so the agent always emits a speakable response even if the LLM returns an unexpected structure.
 
 ## Core Features
 
